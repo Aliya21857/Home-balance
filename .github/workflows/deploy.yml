@@ -23,6 +23,8 @@ jobs:
           VITE_FIREBASE_APP_ID: "${{ vars.VITE_FIREBASE_APP_ID }}"
           VITE_OWNER_UID: "${{ vars.VITE_OWNER_UID }}"
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }
       - name: Deploy
