@@ -21,7 +21,7 @@ function Shell({ user }) {
   const notifications=useMemo(()=>{const now=new Date(),today=localDate(now),soon=new Date(now);soon.setDate(soon.getDate()+7);const soonDate=localDate(soon);return [...data.tasks.filter(x=>!x.completed&&x.date&&x.date<today).map(x=>({type:'Просрочено',title:x.title,meta:x.date,page:'Сегодня',icon:CircleAlert})),...data.tasks.filter(x=>!x.completed&&x.date===today).map(x=>({type:'Сегодня',title:x.title,meta:x.time||'Без времени',page:'Сегодня',icon:Clock3})),...data.events.filter(x=>x.date===today).map(x=>({type:'Событие',title:x.title,meta:x.startTime||'Весь день',page:'Календарь',icon:CalendarClock})),...data.projects.filter(x=>x.status!=='Завершена'&&x.deadline>=today&&x.deadline<=soonDate).map(x=>({type:'Дедлайн',title:x.title,meta:x.deadline,page:'Проекты',icon:CircleAlert}))]},[data.tasks,data.events,data.projects]);
   const navigate=target=>{setPage(target);setMenu(null);setSearch('')};
   let body;
-  if(page==='Главная') body=<Dashboard data={data} setPage={navigate} name={profile.displayName} quote={profile.quote}/>;
+  if(page==='Главная') body=<Dashboard data={data} setPage={navigate} name={profile.displayName} quote={profile.quote} uid={user.uid}/>;
   else if(collectionPages.includes(page)) body=<CollectionPage page={page} uid={user.uid} items={data[{Сегодня:'tasks',Проекты:'projects',Идеи:'ideas',Заметки:'notes',Библиотека:'resources',Цели:'goals'}[page]]}/>;
   else if(page==='Привычки') body=<Habits uid={user.uid} data={data}/>;
   else if(page==='Размышления') body=<Reflections uid={user.uid} items={data.reflections}/>;

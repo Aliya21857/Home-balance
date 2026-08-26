@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import * as I from 'lucide-react';
 import Modal from './Modal';
-import { createItem, deleteItem, toggleHabitForDate, updateItem } from '../firebase/firestore';
+import { createItem, deleteItem, toggleHabitForDate, updateItem, updateTask } from '../firebase/firestore';
 
-const today = () => new Date().toISOString().slice(0,10);
+const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const formatDate = d => d ? new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long'}).format(new Date(d+'T12:00:00')) : 'Без срока';
 const sectionMap = {
   'Сегодня': { collection:'tasks', add:'Добавить дело', empty:'Здесь пока нет дел. Добавьте первое маленькое действие.', fields:[['title','Название','text',true],['description','Описание','textarea'],['date','Дата','date'],['time','Время','time'],['priority','Приоритет','select'],['category','Категория'],['projectId','Проект (ID)']] },
@@ -16,10 +16,10 @@ const sectionMap = {
 const options = { priority:['Обычный','Важный','Высокий'], status:['Активна','На паузе','Завершена'], pinned:['Нет','Да'], type:['Книга','Статья','Курс','Подкаст','Видео','Ссылка'] };
 const makeFields = rows => rows.map(([name,label,type='text',required=false])=>({name,label,type,required,wide:type==='textarea',options:options[name]}));
 
-export function Dashboard({ data, setPage, name, quote }) {
+export function Dashboard({ data, setPage, name, quote, uid }) {
   const tasks=data.tasks.filter(x=>x.date===today()), done=tasks.filter(x=>x.completed).length, pct=tasks.length?Math.round(done/tasks.length*100):0;
   const cards=[
-    ['Сегодня',I.Sun,`${pct}% дня завершено`,tasks.slice(0,4).map(x=>x.title), 'Сегодня'],
+    ['Сегодня',I.Sun,`${pct}% дня завершено`,tasks.slice(0,5), 'Сегодня'],
     ['Проекты',I.FolderKanban,`${data.projects.filter(x=>x.status!=='Завершена').length} активных`,data.projects.slice(0,4).map(x=>`${x.title} · ${x.progress||0}%`),'Проекты'],
     ['Привычки',I.Repeat2,`${data.habits.length} привычек`,data.habits.slice(0,4).map(x=>x.title),'Привычки'],
     ['Библиотека',I.BookOpen,`${data.resources.length} материалов`,data.resources.slice(0,3).map(x=>x.title),'Библиотека'],
@@ -30,7 +30,7 @@ export function Dashboard({ data, setPage, name, quote }) {
     ['Цели',I.Target,`${data.goals.length} целей`,data.goals.slice(0,3).map(x=>`${x.title} · ${x.progress||0}%`),'Цели']
   ];
   const hour=new Date().getHours(), greet=hour<12?'Доброе утро':hour<18?'Добрый день':'Добрый вечер';
-  return <><header className="hero"><div><p className="eyebrow">ВАШЕ ПРОСТРАНСТВО</p><h1>{greet}, {name} <span>❧</span></h1><p>Ваш день — ваш выбор. Двигайтесь к балансу шаг за шагом.</p></div><blockquote>{quote}</blockquote></header><section className="dashboard-grid">{cards.map(([title,Icon,badge,items,target],i)=><article className={`dash-card c${i}`} key={title} role="button" tabIndex="0" onClick={()=>setPage(target)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPage(target)}}}><div className="card-title"><Icon/><h2>{title}</h2><span>{badge}</span></div><div className="card-content">{items.length?items.map((x,j)=><div className="mini-row" key={j}><i/>{x}</div>):<p>Здесь пока тихо — самое время начать.</p>}</div><span className="card-link">Открыть раздел <I.ArrowRight/></span></article>)}</section><footer className="balance-note"><I.House/><p>Баланс рождается из маленьких решений,<br/>которые вы принимаете каждый день.</p><I.Sprout/></footer></>;
+  return <><header className="hero"><div><p className="eyebrow">ВАШЕ ПРОСТРАНСТВО</p><h1>{greet}, {name} <span>❧</span></h1><p>Ваш день — ваш выбор. Двигайтесь к балансу шаг за шагом.</p></div><blockquote>{quote}</blockquote></header><section className="dashboard-grid">{cards.map(([title,Icon,badge,items,target],i)=><article className={`dash-card c${i}`} key={title} role="button" tabIndex="0" onClick={()=>setPage(target)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPage(target)}}}><div className="card-title"><Icon/><h2>{title}</h2><span>{badge}</span></div><div className="card-content">{items.length?(title==='Сегодня'?items.map(task=><label className={`today-task${task.completed?' completed':''}`} key={task.id} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()}><input type="checkbox" checked={!!task.completed} onChange={e=>updateTask(uid,task.id,{completed:e.target.checked})}/><span className="today-check"><I.Check/></span><span className="today-task-title">{task.title}</span><small>{task.completed?'Выполнено':task.time||'Без времени'}</small></label>):items.map((x,j)=><div className="mini-row" key={j}><i/>{x}</div>)):<p>Здесь пока тихо — самое время начать.</p>}</div><span className="card-link">Открыть раздел <I.ArrowRight/></span></article>)}</section><footer className="balance-note"><I.House/><p>Баланс рождается из маленьких решений,<br/>которые вы принимаете каждый день.</p><I.Sprout/></footer></>;
 }
 
 export function CollectionPage({ page, uid, items }) {
