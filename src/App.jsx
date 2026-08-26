@@ -13,6 +13,7 @@ const localDate = date => `${date.getFullYear()}-${String(date.getMonth()+1).pad
 
 function Shell({ user }) {
   const [page,setPage]=useState('Главная'), [drawer,setDrawer]=useState(false), [search,setSearch]=useState(''), [menu,setMenu]=useState(null);
+  useEffect(()=>{const fit=()=>{const scale=globalThis.innerWidth/1536;document.documentElement.style.setProperty('--master-scale',String(scale));document.documentElement.style.setProperty('--master-height',`${1024*scale}px`)};fit();globalThis.addEventListener('resize',fit);return()=>{globalThis.removeEventListener('resize',fit);document.documentElement.style.removeProperty('--master-scale');document.documentElement.style.removeProperty('--master-height')}},[]);
   const {data,loading,error}=useData(user.uid);
   const profile=data.profile || { displayName:'Алия', avatarUrl:'', quote:'Баланс — это не про идеальность, а про честный выбор каждый день.' };
   const collectionPages=['Сегодня','Проекты','Идеи','Заметки','Библиотека','Цели'];
