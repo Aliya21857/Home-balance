@@ -3,7 +3,7 @@ on:
   push: { branches: [main] }
   workflow_dispatch:
 permissions: { contents: read, pages: write, id-token: write }
-concurrency: { group: pages, cancel-in-progress: true }
+concurrency: { group: pages-v2, cancel-in-progress: true }
 jobs:
   deploy:
     environment: { name: github-pages, url: "${{ steps.deployment.outputs.page_url }}" }
