@@ -397,3 +397,7 @@ body{background:#f1e3d3}
 }
 .editorial-hero .hero-copy,
 .editorial-hero blockquote{position:relative;z-index:1}
+
+/* Keep dropdown controls above the click-to-close scrim. */
+.topbar{z-index:40!important}
+.topbar .top-action{z-index:42}
