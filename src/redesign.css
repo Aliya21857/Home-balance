@@ -401,3 +401,4 @@ body{background:#f1e3d3}
 /* Keep dropdown controls above the click-to-close scrim. */
 .topbar{z-index:40!important}
 .topbar .top-action{z-index:42}
+.profile-menu,.profile-menu button{pointer-events:auto!important}
