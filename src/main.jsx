@@ -5,5 +5,6 @@ import './styles.css';
 import './enhancements.css';
 import './task-checkbox.css';
 import './redesign.css';
+import './assistant.css';
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);

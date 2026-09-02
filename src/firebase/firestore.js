@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDoc, onSnapshot, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, onSnapshot, setDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
 const path = (uid, name) => collection(db, 'users', uid, name);
@@ -9,6 +9,16 @@ export async function createItem(uid, name, payload) {
   const ref = doc(path(uid, name));
   await setDoc(ref, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   return ref.id;
+}
+export async function createAssistantItems(uid, entries) {
+  const batch = writeBatch(db);
+  const ids = entries.map(({ collection: name, payload }) => {
+    const ref = doc(path(uid, name));
+    batch.set(ref, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return ref.id;
+  });
+  await batch.commit();
+  return ids;
 }
 export const updateItem = (uid, name, id, payload) => updateDoc(doc(db, 'users', uid, name, id), { ...payload, updatedAt: serverTimestamp() });
 export const deleteItem = (uid, name, id) => deleteDoc(doc(db, 'users', uid, name, id));
