@@ -34,7 +34,7 @@ function errorMessage(status, code) {
   return 'Не удалось связаться с помощником. Проверьте соединение и попробуйте ещё раз.';
 }
 
-function toFirestore(item) {
+function toFirestore(item, sourceText) {
   const common = { title:item.title.trim(), sourceLanguage:item.sourceLanguage, aiConfidence:item.confidence };
   switch(item.type) {
     case 'task': return { collection:'tasks', payload:{ ...common, description:item.description||'', date:item.date||'', time:item.time||'', category:item.category||'', completed:false } };
@@ -43,7 +43,7 @@ function toFirestore(item) {
     case 'habit': return { collection:'habits', payload:{ ...common, category:item.category||'', frequency:item.frequency||'', active:true } };
     case 'idea': return { collection:'ideas', payload:{ ...common, text:item.description||'', category:item.category||'', pinned:'Нет' } };
     case 'note': return { collection:'notes', payload:{ ...common, text:item.description||'', category:item.category||'', pinned:'Нет' } };
-    case 'reflection': return { collection:'reflections', payload:{ ...common, date:item.date||'', thoughts:item.description||item.title, mood:'', wins:'', gratitude:'', improvement:'' } };
+    case 'reflection': return { collection:'reflections', payload:{ ...common, date:item.date||'', thoughts:item.description?.trim()||item.title.trim()||sourceText.trim(), sourceText:sourceText.trim(), mood:'', wins:'', gratitude:'', improvement:'' } };
     case 'goal': return { collection:'goals', payload:{ ...common, description:item.description||'', deadline:item.date||'', status:'Активна', progress:0 } };
     case 'resource': return { collection:'resources', payload:{ ...common, type:item.resourceType||'Материал', description:item.description||'', url:'', tags:item.category||'' } };
     default: throw new Error('Unsupported assistant item type');
@@ -124,7 +124,7 @@ export default function Assistant({user}) {
   const save=async()=>{
     const valid=items.filter(item=>item.title?.trim()&&itemTypes.includes(item.type));if(!valid.length||saving)return;
     setSaving(true);setError('');
-    try{await createAssistantItems(user.uid,valid.map(toFirestore));setSaved(valid.map(item=>({title:item.title,section:sectionLabels[item.type]})));setItems([]);setMessage('')}catch{setError('Не удалось сохранить записи. Ничего не было добавлено — попробуйте ещё раз.')}finally{setSaving(false)}
+    try{await createAssistantItems(user.uid,valid.map(item=>toFirestore(item,text)));setSaved(valid.map(item=>({title:item.title,section:sectionLabels[item.type]})));setItems([]);setMessage('')}catch(saveError){setError(saveError.message||'Не удалось сохранить записи. Ничего не было добавлено — попробуйте ещё раз.')}finally{setSaving(false)}
   };
   const speechLabel={ready:'Готово к записи',requesting:'Запрашиваю доступ к микрофону…',listening:'Слушаю…',recognized:'Я услышала — текст можно изменить.',stopped:'Запись остановлена.',error:'Ошибка распознавания.'}[speechState];
 

@@ -10,13 +10,34 @@ export async function createItem(uid, name, payload) {
   await setDoc(ref, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
   return ref.id;
 }
+const reflectionFields = ['thoughts', 'sourceText', 'wins', 'gratitude', 'improvement'];
+const cleanText = value => typeof value === 'string' ? value.trim() : '';
+export async function saveReflection(uid, payload, { id = null, batch = null } = {}) {
+  const normalized = {
+    title: cleanText(payload.title), date: cleanText(payload.date), mood: cleanText(payload.mood),
+    wins: cleanText(payload.wins), gratitude: cleanText(payload.gratitude), thoughts: cleanText(payload.thoughts),
+    improvement: cleanText(payload.improvement), sourceText: cleanText(payload.sourceText),
+    ...(payload.sourceLanguage ? { sourceLanguage: payload.sourceLanguage } : {}),
+    ...(typeof payload.aiConfidence === 'number' ? { aiConfidence: payload.aiConfidence } : {}),
+  };
+  if (!reflectionFields.some(field => normalized[field])) throw new Error('Добавьте текст размышления перед сохранением.');
+  if (!normalized.thoughts) normalized.thoughts = normalized.sourceText || normalized.wins || normalized.gratitude || normalized.improvement;
+  if (!normalized.sourceText) normalized.sourceText = normalized.thoughts;
+  if (!normalized.title) normalized.title = normalized.thoughts.slice(0, 120);
+  const ref = id ? doc(db, 'users', uid, 'reflections', id) : doc(path(uid, 'reflections'));
+  if (batch) { batch.set(ref, { ...normalized, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }); return ref.id; }
+  if (id) await updateDoc(ref, { ...normalized, updatedAt: serverTimestamp() });
+  else await setDoc(ref, { ...normalized, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  return ref.id;
+}
 export async function createAssistantItems(uid, entries) {
   const batch = writeBatch(db);
-  const ids = entries.map(({ collection: name, payload }) => {
+  const ids = await Promise.all(entries.map(({ collection: name, payload }) => {
+    if (name === 'reflections') return saveReflection(uid, payload, { batch });
     const ref = doc(path(uid, name));
     batch.set(ref, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     return ref.id;
-  });
+  }));
   await batch.commit();
   return ids;
 }
@@ -47,7 +68,7 @@ export const createProject = (uid, p) => createItem(uid, 'projects', p);
 export const updateProject = (uid, id, p) => updateItem(uid, 'projects', id, p);
 export const deleteProject = (uid, id) => deleteItem(uid, 'projects', id);
 export const createIdea = (uid, p) => createItem(uid, 'ideas', p);
-export const createReflection = (uid, p) => createItem(uid, 'reflections', p);
+export const createReflection = (uid, p) => saveReflection(uid, p);
 export const createNote = (uid, p) => createItem(uid, 'notes', p);
 export const createResource = (uid, p) => createItem(uid, 'resources', p);
 export const createGoal = (uid, p) => createItem(uid, 'goals', p);
